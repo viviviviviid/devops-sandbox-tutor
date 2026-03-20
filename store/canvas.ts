@@ -158,12 +158,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => {
 
     setSelectedNode: (id) => set({ selectedNodeId: id }),
 
-    updateEdgeData: (id, partial) =>
+    updateEdgeData: (id, partial) => {
+      _pushHistory();
       set((state) => ({
         edges: state.edges.map((e) =>
           e.id === id ? { ...e, data: { ...(e.data as EdgeData), ...partial } } : e
         ),
-      })),
+      }));
+    },
 
     deleteEdge: (id) => {
       _pushHistory();

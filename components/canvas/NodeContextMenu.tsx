@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Node } from '@xyflow/react';
 import { useCanvasStore, NodeData } from '@/store/canvas';
 
@@ -11,11 +11,10 @@ interface NodeContextMenuProps {
   onClose: () => void;
 }
 
-let dupCounter = 1000;
-
 export default function NodeContextMenu({ node, x, y, onClose }: NodeContextMenuProps) {
   const { addNode, deleteNode, setSelectedNode } = useCanvasStore();
   const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ x, y });
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -32,10 +31,19 @@ export default function NodeContextMenu({ node, x, y, onClose }: NodeContextMenu
     };
   }, [onClose]);
 
+  useLayoutEffect(() => {
+    if (!menuRef.current) return;
+    const { width, height } = menuRef.current.getBoundingClientRect();
+    setPos({
+      x: Math.min(x, window.innerWidth - width - 8),
+      y: Math.min(y, window.innerHeight - height - 8),
+    });
+  }, [x, y]);
+
   const handleDuplicate = () => {
     const newNode: Node<NodeData> = {
       ...node,
-      id: `${node.data.serviceId}-dup-${dupCounter++}`,
+      id: `${node.data.serviceId}-dup-${crypto.randomUUID().slice(0, 8)}`,
       position: { x: node.position.x + 40, y: node.position.y + 40 },
       selected: false,
     };
@@ -58,8 +66,8 @@ export default function NodeContextMenu({ node, x, y, onClose }: NodeContextMenu
       ref={menuRef}
       style={{
         position: 'fixed',
-        left: x,
-        top: y,
+        left: pos.x,
+        top: pos.y,
         background: '#1a1f2e',
         border: '1px solid #2d3748',
         borderRadius: '8px',

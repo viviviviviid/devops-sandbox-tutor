@@ -1,16 +1,26 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { getService } from '@/lib/aws-services';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function AWSNode({ data, selected }: NodeProps<any>) {
   const [hovered, setHovered] = useState(false);
+  const [tooltipBelow, setTooltipBelow] = useState(false);
+  const nodeRef = useRef<HTMLDivElement>(null);
   const service = getService(data.serviceId);
+
+  const handleMouseEnter = () => {
+    if (nodeRef.current) {
+      setTooltipBelow(nodeRef.current.getBoundingClientRect().top < 220);
+    }
+    setHovered(true);
+  };
 
   return (
     <div
+      ref={nodeRef}
       style={{
         background: selected ? '#1e293b' : '#1a1f2e',
         border: `2px solid ${selected ? data.color : '#2d3748'}`,
@@ -27,7 +37,7 @@ function AWSNode({ data, selected }: NodeProps<any>) {
         overflow: 'visible',
         position: 'relative',
       }}
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setHovered(false)}
     >
       {/* Accent bar */}
@@ -102,10 +112,11 @@ function AWSNode({ data, selected }: NodeProps<any>) {
         <div
           style={{
             position: 'absolute',
-            bottom: '100%',
+            ...(tooltipBelow
+              ? { top: '100%', marginTop: '8px', bottom: 'unset' }
+              : { bottom: '100%', marginBottom: '8px' }),
             left: '50%',
             transform: 'translateX(-50%)',
-            marginBottom: '8px',
             background: '#0f1117',
             border: `1px solid ${data.color}60`,
             borderRadius: '6px',

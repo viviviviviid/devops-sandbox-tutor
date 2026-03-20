@@ -30,7 +30,6 @@ const edgeTypes: any = {
   customEdge: CustomEdge,
 };
 
-let nodeIdCounter = 1;
 
 interface ContextMenuState<T> {
   item: T;
@@ -65,7 +64,7 @@ export default function CanvasArea() {
         const groupLabel = e.dataTransfer.getData('application/group-label');
         const groupColor = e.dataTransfer.getData('application/group-color');
         const newNode: Node = {
-          id: `group-${nodeIdCounter++}`,
+          id: `group-${crypto.randomUUID().slice(0, 8)}`,
           type: 'groupNode',
           position,
           data: { label: groupLabel, color: groupColor },
@@ -79,7 +78,7 @@ export default function CanvasArea() {
       if (!service) return;
 
       const newNode: Node<NodeData> = {
-        id: `${serviceId}-${nodeIdCounter++}`,
+        id: `${serviceId}-${crypto.randomUUID().slice(0, 8)}`,
         type: 'awsNode',
         position,
         data: {

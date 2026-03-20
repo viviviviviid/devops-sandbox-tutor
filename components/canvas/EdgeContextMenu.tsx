@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useCanvasStore, EdgeData } from '@/store/canvas';
 
 interface EdgeContextMenuProps {
@@ -14,6 +14,16 @@ interface EdgeContextMenuProps {
 export default function EdgeContextMenu({ edgeId, x, y, edgeData, onClose }: EdgeContextMenuProps) {
   const { updateEdgeData, deleteEdge } = useCanvasStore();
   const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ x, y });
+
+  useLayoutEffect(() => {
+    if (!menuRef.current) return;
+    const { width, height } = menuRef.current.getBoundingClientRect();
+    setPos({
+      x: Math.min(x, window.innerWidth - width - 8),
+      y: Math.min(y, window.innerHeight - height - 8),
+    });
+  }, [x, y]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -51,8 +61,8 @@ export default function EdgeContextMenu({ edgeId, x, y, edgeData, onClose }: Edg
       ref={menuRef}
       style={{
         position: 'fixed',
-        left: x,
-        top: y,
+        left: pos.x,
+        top: pos.y,
         background: '#1a1f2e',
         border: '1px solid #2d3748',
         borderRadius: '8px',
