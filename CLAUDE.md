@@ -17,6 +17,9 @@ Interactive AWS architecture learning platform. Users drag-and-drop AWS services
 - Every state mutation that should be undoable must call `_pushHistory()` first (see `store/canvas.ts`)
 - Context menus clamp to viewport with `useLayoutEffect` + `getBoundingClientRect`
 - AI context sent to `/api/chat`: `{ messages, architecture: { nodes (with parentId), edges (with label/color) }, scenario }`
+- Node hints use a separate `/api/hint` endpoint — first drop of each serviceId per session only (debounced 800ms, tracked via module-level Set in CanvasArea)
+- Hint messages use `role: 'hint'` in ai store and render as a green card in AIPanel (distinct from assistant bubbles)
+- Scoring is pure client-side (`lib/scoring.ts`) — no API call, recomputes on every render from live canvas store
 
 ## File map
 ```
@@ -25,7 +28,7 @@ app/
   page.tsx              — Root layout: ServiceSidebar | Canvas | AIPanel
 components/
   canvas/               — CanvasArea, AWSNode, GroupNode, CustomEdge, PropertyPanel,
-                          Toolbar, NodeContextMenu, EdgeContextMenu, ShortcutPanel
+                          Toolbar, NodeContextMenu, EdgeContextMenu, ShortcutPanel, ScorePanel
   sidebar/
     ServiceSidebar.tsx  — "서비스 / 학습" tabbed sidebar; scenario list + checklist
   ai-panel/
@@ -37,6 +40,10 @@ store/
 lib/
   aws-services.ts       — AWS service catalogue (id, name, icon, color, defaultConfig)
   scenarios.ts          — 6 learning scenarios with checklist + AI hint
+  scoring.ts            — client-side rule engine: 15 rules across security/HA/cost
+app/
+  api/chat/route.ts     — Gemini streaming chat (full architecture + scenario context)
+  api/hint/route.ts     — Gemini streaming hint (single service, 2-3 sentences)
 hooks/
   useExportImage.ts     — PNG export via html-to-image
 ```

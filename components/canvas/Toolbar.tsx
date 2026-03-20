@@ -4,13 +4,16 @@ import { useEffect } from 'react';
 import { useCanvasStore } from '@/store/canvas';
 import { useAIStore } from '@/store/ai';
 import { useExportImage } from '@/hooks/useExportImage';
+import { computeScore, scoreColor } from '@/lib/scoring';
 
 interface ToolbarProps {
   onToggleShortcuts: () => void;
+  onToggleScore: () => void;
 }
 
-export default function Toolbar({ onToggleShortcuts }: ToolbarProps) {
+export default function Toolbar({ onToggleShortcuts, onToggleScore }: ToolbarProps) {
   const { exportDiagram, importDiagram, clearCanvas, nodes, edges, undo, redo, canUndo, canRedo, snapToGrid, toggleSnapToGrid } = useCanvasStore();
+  const score = nodes.length > 0 ? computeScore(nodes, edges) : null;
   const { addMessage } = useAIStore();
   const { exportPng } = useExportImage();
 
@@ -155,6 +158,33 @@ export default function Toolbar({ onToggleShortcuts }: ToolbarProps) {
       <ToolbarButton onClick={handleAutoReview} color="#4299e1">
         🔍 AI 검토
       </ToolbarButton>
+
+      {/* 점수 뱃지 */}
+      {score !== null && (
+        <button
+          onClick={onToggleScore}
+          title="아키텍처 점수 보기"
+          style={{
+            background: `${scoreColor(score.total)}15`,
+            border: `1px solid ${scoreColor(score.total)}60`,
+            borderRadius: '6px',
+            color: scoreColor(score.total),
+            padding: '4px 10px',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: 700,
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = `${scoreColor(score.total)}30`;
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = `${scoreColor(score.total)}15`;
+          }}
+        >
+          📊 {score.total}점
+        </button>
+      )}
 
       <div style={{ flex: 1 }} />
 

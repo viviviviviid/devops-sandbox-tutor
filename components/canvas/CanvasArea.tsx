@@ -12,12 +12,18 @@ import {
   Edge,
 } from '@xyflow/react';
 import { useCanvasStore, NodeData, EdgeData } from '@/store/canvas';
+import { useAIStore } from '@/store/ai';
+import { useScenarioStore } from '@/store/scenario';
 import AWSNode from './AWSNode';
 import GroupNode from './GroupNode';
 import CustomEdge from './CustomEdge';
 import NodeContextMenu from './NodeContextMenu';
 import EdgeContextMenu from './EdgeContextMenu';
 import { getService } from '@/lib/aws-services';
+
+// 세션 내 힌트를 받은 서비스 추적 (렌더 트리거 불필요)
+const hintedServices = new Set<string>();
+let hintTimer: ReturnType<typeof setTimeout> | null = null;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: any = {
@@ -42,6 +48,8 @@ export default function CanvasArea() {
     useCanvasStore();
   const { screenToFlowPosition } = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { addMessage, appendToLastHint } = useAIStore();
+  const { activeScenario } = useScenarioStore();
 
   const [nodeMenu, setNodeMenu] = useState<ContextMenuState<Node<NodeData>> | null>(null);
   const [edgeMenu, setEdgeMenu] = useState<ContextMenuState<Edge> | null>(null);
@@ -90,8 +98,38 @@ export default function CanvasArea() {
         },
       };
       addNode(newNode);
+
+      // 세션에서 처음 배치하는 서비스에만 힌트 트리거 (디바운스 800ms)
+      if (!hintedServices.has(serviceId)) {
+        hintedServices.add(serviceId);
+        if (hintTimer) clearTimeout(hintTimer);
+        hintTimer = setTimeout(async () => {
+          addMessage('hint', '');
+          try {
+            const res = await fetch('/api/hint', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                serviceId,
+                serviceName: service.name,
+                scenarioTitle: activeScenario?.title ?? null,
+              }),
+            });
+            if (!res.body) return;
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              appendToLastHint(decoder.decode(value));
+            }
+          } catch {
+            appendToLastHint('힌트를 불러오지 못했습니다.');
+          }
+        }, 800);
+      }
     },
-    [screenToFlowPosition, addNode]
+    [screenToFlowPosition, addNode, addMessage, appendToLastHint, activeScenario]
   );
 
   const onNodeClick = useCallback(

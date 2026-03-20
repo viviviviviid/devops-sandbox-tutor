@@ -146,38 +146,62 @@ export default function AIPanel() {
           </div>
         )}
 
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            style={{
-              marginBottom: '12px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-            }}
-          >
-            <div
-              style={{
-                maxWidth: '90%',
-                padding: '10px 12px',
-                borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                background: msg.role === 'user' ? '#4299e1' : '#0f1117',
-                color: '#e2e8f0',
-                fontSize: '12px',
-                lineHeight: 1.6,
-                border: msg.role === 'assistant' ? '1px solid #2d3748' : 'none',
-              }}
-            >
-              {msg.role === 'assistant' ? (
-                <div className="prose-sm">
+        {messages.map((msg) => {
+          if (msg.role === 'hint') {
+            return (
+              <div
+                key={msg.id}
+                style={{
+                  marginBottom: '12px',
+                  background: '#0d1f0d',
+                  border: '1px solid #2d4a2d',
+                  borderRadius: '8px',
+                  padding: '8px 10px',
+                }}
+              >
+                <div style={{ fontSize: '10px', color: '#68d391', fontWeight: 700, marginBottom: '4px', letterSpacing: '0.3px' }}>
+                  💡 서비스 힌트
+                </div>
+                <div className="prose-sm" style={{ fontSize: '11px', color: '#a0aec0' }}>
                   <ReactMarkdown>{msg.content || '▌'}</ReactMarkdown>
                 </div>
-              ) : (
-                msg.content
-              )}
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={msg.id}
+              style={{
+                marginBottom: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: '90%',
+                  padding: '10px 12px',
+                  borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                  background: msg.role === 'user' ? '#4299e1' : '#0f1117',
+                  color: '#e2e8f0',
+                  fontSize: '12px',
+                  lineHeight: 1.6,
+                  border: msg.role === 'assistant' ? '1px solid #2d3748' : 'none',
+                }}
+              >
+                {msg.role === 'assistant' ? (
+                  <div className="prose-sm">
+                    <ReactMarkdown>{msg.content || '▌'}</ReactMarkdown>
+                  </div>
+                ) : (
+                  msg.content
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {isLoading && (
           <div style={{ display: 'flex', gap: '4px', padding: '8px' }}>

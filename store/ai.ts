@@ -4,7 +4,7 @@ import { create } from 'zustand';
 
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'hint';
   content: string;
   timestamp: Date;
 }
@@ -12,8 +12,9 @@ export interface ChatMessage {
 interface AIStore {
   messages: ChatMessage[];
   isLoading: boolean;
-  addMessage: (role: 'user' | 'assistant', content: string) => void;
+  addMessage: (role: 'user' | 'assistant' | 'hint', content: string) => void;
   appendToLastAssistant: (chunk: string) => void;
+  appendToLastHint: (chunk: string) => void;
   setLoading: (v: boolean) => void;
   clearMessages: () => void;
 }
@@ -36,6 +37,18 @@ export const useAIStore = create<AIStore>((set) => ({
       const last = msgs[msgs.length - 1];
       if (last?.role === 'assistant') {
         msgs[msgs.length - 1] = { ...last, content: last.content + chunk };
+      }
+      return { messages: msgs };
+    }),
+
+  appendToLastHint: (chunk) =>
+    set((state) => {
+      const msgs = [...state.messages];
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        if (msgs[i].role === 'hint') {
+          msgs[i] = { ...msgs[i], content: msgs[i].content + chunk };
+          return { messages: msgs };
+        }
       }
       return { messages: msgs };
     }),

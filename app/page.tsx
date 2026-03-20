@@ -7,6 +7,7 @@ import ServiceSidebar from '@/components/sidebar/ServiceSidebar';
 import AIPanel from '@/components/ai-panel/AIPanel';
 import Toolbar from '@/components/canvas/Toolbar';
 import ShortcutPanel from '@/components/canvas/ShortcutPanel';
+import ScorePanel from '@/components/canvas/ScorePanel';
 
 // ReactFlow는 SSR 비활성화 필요
 const CanvasArea = dynamic(() => import('@/components/canvas/CanvasArea'), { ssr: false });
@@ -14,6 +15,7 @@ const PropertyPanel = dynamic(() => import('@/components/canvas/PropertyPanel'),
 
 export default function Home() {
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showScore, setShowScore] = useState(false);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -29,7 +31,10 @@ export default function Home() {
   return (
     <ReactFlowProvider>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-        <Toolbar onToggleShortcuts={() => setShowShortcuts((v) => !v)} />
+        <Toolbar
+          onToggleShortcuts={() => setShowShortcuts((v) => !v)}
+          onToggleScore={() => setShowScore((v) => !v)}
+        />
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           <ServiceSidebar />
           <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
@@ -40,6 +45,7 @@ export default function Home() {
         </div>
       </div>
       {showShortcuts && <ShortcutPanel onClose={() => setShowShortcuts(false)} />}
+      {showScore && <ScorePanel onClose={() => setShowScore(false)} />}
     </ReactFlowProvider>
   );
 }
