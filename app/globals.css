@@ -47,14 +47,7 @@ body {
   border-radius: 8px;
 }
 
-.react-flow__edge-path {
-  stroke: #4299e1;
-  stroke-width: 2;
-}
-
-.react-flow__edge.selected .react-flow__edge-path {
-  stroke: #63b3ed;
-}
+/* edge stroke는 CustomEdge 인라인 스타일로 제어 */
 
 /* 스크롤바 */
 ::-webkit-scrollbar {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -9,10 +9,14 @@ import {
   BackgroundVariant,
   useReactFlow,
   Node,
+  Edge,
 } from '@xyflow/react';
-import { useCanvasStore, NodeData } from '@/store/canvas';
+import { useCanvasStore, NodeData, EdgeData } from '@/store/canvas';
 import AWSNode from './AWSNode';
 import GroupNode from './GroupNode';
+import CustomEdge from './CustomEdge';
+import NodeContextMenu from './NodeContextMenu';
+import EdgeContextMenu from './EdgeContextMenu';
 import { getService } from '@/lib/aws-services';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,13 +25,27 @@ const nodeTypes: any = {
   groupNode: GroupNode,
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const edgeTypes: any = {
+  customEdge: CustomEdge,
+};
+
 let nodeIdCounter = 1;
 
+interface ContextMenuState<T> {
+  item: T;
+  x: number;
+  y: number;
+}
+
 export default function CanvasArea() {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode, setSelectedNode } =
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode, setSelectedNode, snapToGrid } =
     useCanvasStore();
   const { screenToFlowPosition } = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
+  const [nodeMenu, setNodeMenu] = useState<ContextMenuState<Node<NodeData>> | null>(null);
+  const [edgeMenu, setEdgeMenu] = useState<ContextMenuState<Edge> | null>(null);
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -86,7 +104,27 @@ export default function CanvasArea() {
 
   const onPaneClick = useCallback(() => {
     setSelectedNode(null);
+    setNodeMenu(null);
+    setEdgeMenu(null);
   }, [setSelectedNode]);
+
+  const onNodeContextMenu = useCallback(
+    (e: React.MouseEvent, node: Node) => {
+      e.preventDefault();
+      setEdgeMenu(null);
+      setNodeMenu({ item: node as Node<NodeData>, x: e.clientX, y: e.clientY });
+    },
+    []
+  );
+
+  const onEdgeContextMenu = useCallback(
+    (e: React.MouseEvent, edge: Edge) => {
+      e.preventDefault();
+      setNodeMenu(null);
+      setEdgeMenu({ item: edge, x: e.clientX, y: e.clientY });
+    },
+    []
+  );
 
   return (
     <div ref={reactFlowWrapper} className="w-full h-full">
@@ -100,7 +138,12 @@ export default function CanvasArea() {
         onDrop={onDrop}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
+        onNodeContextMenu={onNodeContextMenu}
+        onEdgeContextMenu={onEdgeContextMenu}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        snapToGrid={snapToGrid}
+        snapGrid={[20, 20]}
         fitView
         deleteKeyCode="Delete"
         multiSelectionKeyCode="Shift"
@@ -120,6 +163,25 @@ export default function CanvasArea() {
           maskColor="rgba(15,17,23,0.7)"
         />
       </ReactFlow>
+
+      {nodeMenu && (
+        <NodeContextMenu
+          node={nodeMenu.item}
+          x={nodeMenu.x}
+          y={nodeMenu.y}
+          onClose={() => setNodeMenu(null)}
+        />
+      )}
+
+      {edgeMenu && (
+        <EdgeContextMenu
+          edgeId={edgeMenu.item.id}
+          x={edgeMenu.x}
+          y={edgeMenu.y}
+          edgeData={(edgeMenu.item.data as EdgeData) ?? { edgeType: 'smoothstep' }}
+          onClose={() => setEdgeMenu(null)}
+        />
+      )}
     </div>
   );
 }

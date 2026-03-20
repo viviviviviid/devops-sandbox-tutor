@@ -1,11 +1,35 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useCanvasStore } from '@/store/canvas';
 import { useAIStore } from '@/store/ai';
+import { useExportImage } from '@/hooks/useExportImage';
 
-export default function Toolbar() {
-  const { exportDiagram, importDiagram, clearCanvas, nodes, edges } = useCanvasStore();
+interface ToolbarProps {
+  onToggleShortcuts: () => void;
+}
+
+export default function Toolbar({ onToggleShortcuts }: ToolbarProps) {
+  const { exportDiagram, importDiagram, clearCanvas, nodes, edges, undo, redo, canUndo, canRedo, snapToGrid, toggleSnapToGrid } = useCanvasStore();
   const { addMessage } = useAIStore();
+  const { exportPng } = useExportImage();
+
+  // Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z 단축키
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // input 요소에서는 무시
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+      if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((e.key === 'y' && (e.ctrlKey || e.metaKey)) || (e.key === 'z' && (e.ctrlKey || e.metaKey) && e.shiftKey)) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [undo, redo]);
 
   const handleExport = () => {
     const json = exportDiagram();
@@ -99,6 +123,24 @@ export default function Toolbar() {
 
       <div style={{ width: '1px', height: '24px', background: '#2d3748' }} />
 
+      {/* Undo / Redo */}
+      <ToolbarButton
+        onClick={undo}
+        style={!canUndo ? { opacity: 0.3, pointerEvents: 'none' } : undefined}
+        title="실행취소 (Ctrl+Z)"
+      >
+        ↩ 실행취소
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={redo}
+        style={!canRedo ? { opacity: 0.3, pointerEvents: 'none' } : undefined}
+        title="다시실행 (Ctrl+Y)"
+      >
+        ↪ 다시실행
+      </ToolbarButton>
+
+      <div style={{ width: '1px', height: '24px', background: '#2d3748' }} />
+
       <ToolbarButton onClick={handleAutoReview} color="#4299e1">
         🔍 AI 검토
       </ToolbarButton>
@@ -111,9 +153,23 @@ export default function Toolbar() {
 
       <div style={{ width: '1px', height: '24px', background: '#2d3748' }} />
 
+      {/* 스냅 토글 */}
+      <ToolbarButton
+        onClick={toggleSnapToGrid}
+        style={snapToGrid ? { background: '#2d4a6e', borderColor: '#4299e1' } : undefined}
+        title="스냅 투 그리드 토글"
+      >
+        🧲 스냅
+      </ToolbarButton>
+
+      <ToolbarButton onClick={exportPng} title="PNG로 내보내기">🖼 PNG 저장</ToolbarButton>
       <ToolbarButton onClick={handleImport}>📂 불러오기</ToolbarButton>
       <ToolbarButton onClick={handleExport}>💾 저장</ToolbarButton>
       <ToolbarButton onClick={handleClear} color="#fc8181">🗑 초기화</ToolbarButton>
+
+      <div style={{ width: '1px', height: '24px', background: '#2d3748' }} />
+
+      <ToolbarButton onClick={onToggleShortcuts} title="단축키 안내">?</ToolbarButton>
     </div>
   );
 }
@@ -122,14 +178,19 @@ function ToolbarButton({
   children,
   onClick,
   color = '#a0aec0',
+  style,
+  title,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   color?: string;
+  style?: React.CSSProperties;
+  title?: string;
 }) {
   return (
     <button
       onClick={onClick}
+      title={title}
       style={{
         background: 'transparent',
         border: '1px solid #2d3748',
@@ -140,12 +201,14 @@ function ToolbarButton({
         fontSize: '12px',
         fontWeight: 500,
         transition: 'all 0.15s',
+        ...style,
       }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLButtonElement).style.background = '#2d3748';
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+        const base = style?.background as string | undefined;
+        (e.currentTarget as HTMLButtonElement).style.background = base ?? 'transparent';
       }}
     >
       {children}
