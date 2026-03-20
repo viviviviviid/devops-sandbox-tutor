@@ -75,8 +75,19 @@ export default function Toolbar({ onToggleShortcuts }: ToolbarProps) {
     addMessage('user', '현재 아키텍처를 전체적으로 검토해주세요.');
 
     const architecture = {
-      nodes: nodes.map((n) => ({ id: n.id, type: n.data.serviceId, label: n.data.label, config: n.data.config })),
-      edges: edges.map((e) => ({ from: e.source, to: e.target })),
+      nodes: nodes.map((n) => ({
+        id: n.id,
+        type: n.data.serviceId || 'group',
+        label: n.data.label,
+        config: n.data.config,
+        ...(n.parentId ? { parentId: n.parentId } : {}),
+      })),
+      edges: edges.map((e) => ({
+        from: e.source,
+        to: e.target,
+        ...(e.data?.label ? { label: e.data.label as string } : {}),
+        ...(e.data?.color ? { color: e.data.color as string } : {}),
+      })),
     };
 
     const { addMessage: am, appendToLastAssistant, setLoading } = useAIStore.getState();

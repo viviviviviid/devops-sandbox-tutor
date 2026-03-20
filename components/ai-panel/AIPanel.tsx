@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAIStore } from '@/store/ai';
 import { useCanvasStore } from '@/store/canvas';
+import { useScenarioStore } from '@/store/scenario';
 import ReactMarkdown from 'react-markdown';
 
 const QUICK_QUESTIONS = [
@@ -16,6 +17,7 @@ const QUICK_QUESTIONS = [
 export default function AIPanel() {
   const { messages, isLoading, addMessage, appendToLastAssistant, setLoading } = useAIStore();
   const { nodes, edges } = useCanvasStore();
+  const { activeScenario, completedItems } = useScenarioStore();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -30,10 +32,13 @@ export default function AIPanel() {
       type: n.data.serviceId || 'group',
       label: n.data.label,
       config: n.data.config,
+      ...(n.parentId ? { parentId: n.parentId } : {}),
     })),
     edges: edges.map((e) => ({
       from: e.source,
       to: e.target,
+      ...(e.data?.label ? { label: e.data.label as string } : {}),
+      ...(e.data?.color ? { color: e.data.color as string } : {}),
     })),
   });
 
@@ -59,6 +64,16 @@ export default function AIPanel() {
         body: JSON.stringify({
           messages: allMessages,
           architecture: getArchitecture(),
+          scenario: activeScenario
+            ? {
+                title: activeScenario.title,
+                goal: activeScenario.goal,
+                checklist: activeScenario.checklist.map((item, i) => ({
+                  item,
+                  done: completedItems[i] ?? false,
+                })),
+              }
+            : null,
         }),
       });
 
